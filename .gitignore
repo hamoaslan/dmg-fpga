@@ -1,0 +1,48 @@
+#.gitignore
+
+#baseline: ignore everything
+*
+
+# not this file
+!.gitignore
+
+# not these standard files
+!LICENSE
+!README.md
+
+# not tcl scripts, text and report files
+!*.tcl
+!*.txt
+!*.labrpt
+
+# not what's in these folderes
+!project*/
+!project*/*.xsa
+!*.xsa
+!constraints/
+!constraints/*
+!constraints/**
+!hdlsrc/
+!hdlsrc/*
+!hdlsrc/**
+!csrc*/
+!csrc*/*
+!csrc*/**
+!testbench/
+!testbench/*
+!testbench/**
+!misc/
+!misc/*
+!misc/**
+!ip/
+!ip/*
+!ip/**
+!vitis_project
+!vitis_project/.keep
+
+# not Vitis GUI setting
+!vitis_project/.metadata
+!vitis_project/.metadata/.plugins/org.eclipse.core.runtime
+!vitis_project/.metadata/.plugins/org.eclipse.core.runtime/.settings
+!vitis_project/.metadata/.plugins/org.eclipse.core.runtime/.settings/com.xilinx.sdx.core.prefs
+
