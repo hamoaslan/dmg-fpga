@@ -16,7 +16,7 @@
 !*.labrpt
 
 # not what's in these folderes
-!project*/
+# !project*/
 !project*/*.xsa
 !*.xsa
 !constraints/
