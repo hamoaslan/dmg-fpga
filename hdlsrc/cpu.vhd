@@ -38,6 +38,9 @@ entity cpu is
 end cpu;
 
 architecture Behavioral of cpu is
+-------------------------------------------
+-- REGISTER FILE
+-------------------------------------------
 
 signal reg_IE: std_logic_vector(7 downto 0) := (others => '0');
 signal reg_IR: std_logic_vector(7 downto 0) := (others => '0');
@@ -53,6 +56,24 @@ signal reg_L: std_logic_vector(7 downto 0) := (others => '0');
 
 signal reg_SP: std_logic_vector(15 downto 0) := (others => '0');
 signal reg_PC: std_logic_vector(15 downto 0) := (others => '0');
+
+-------------------------------------------
+-- ALU
+-------------------------------------------
+component alu
+    port (
+        data_in1 : in std_logic;
+        data_in2 : in std_logic;
+        data_out : out std_logic        
+    );
+end component;
+
+signal alu_data_in1 : std_logic := '0';
+signal alu_data_in2 : std_logic := '0';
+signal alu_data_out : std_logic := '0';
+-------------------------------------------
+-- CLOCKING WIZARD
+-------------------------------------------
 
 signal mcycle_count: unsigned(1 downto 0) := (others => '0');
 
@@ -108,6 +129,13 @@ signal target, source : REGISTER_TYPE;
 
 begin
 mcycle_debug <= mcycle_count;
+
+my_alu : alu
+    port map (
+        data_in1 => alu_data_in1,
+        data_in2 => alu_data_in2,
+        data_out => alu_data_out
+    );
 
 process (CLK_SYS)
 begin

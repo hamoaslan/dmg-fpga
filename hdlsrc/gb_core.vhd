@@ -25,22 +25,91 @@ use IEEE.NUMERIC_STD.ALL;
 
 entity gb_core is
     Port (
-        CLK_SYS : in std_logic;
-        CLK_GB : in std_logic
+        clock125 : in std_logic;
+        reset_async : in std_logic
         );
 end gb_core;
 
 architecture Behavioral of gb_core is
 
--- Memory
-type w_ram is array (0 to 8191) of std_logic_vector (7 downto 0);
-type v_ram is array (0 to 8191) of std_logic_vector (7 downto 0);
-type echo_ram is array (0 to 7679) of std_logic_vector (7 downto 0);
-type oam_mem is array (0 to 159) of std_logic_vector (7 downto 0);
-type not_usable_mem is array (0 to 95) of std_logic_vector (7 downto 0);
-type io_reg is array (0 to 127) of std_logic_vector (7 downto 0);
-type h_ram is array (0 to 127) of std_logic_vector (7 downto 0);
+-------------------------------------------
+-- CLOCKING WIZARD
+-------------------------------------------
+component clk_wiz_0
+    port
+     (
+        clk_out1          : out    std_logic;
+        locked            : out    std_logic;
+        clk_in1           : in     std_logic 
+     );
+end component;
+
+signal CLK_SYS : std_logic;
+signal RST_SYS : std_logic;
+signal locked : std_logic;
+
+-------------------------------------------
+-- CPU
+-------------------------------------------
+component cpu
+    port
+    (
+        CLK_SYS : in std_logic;
+        CE_GB : in std_logic;
+        RST : in std_logic;
+        addr_bus : out std_logic_vector(15 downto 0);
+        data_bus_in : in std_logic_vector(7 downto 0);
+        data_bus_out : out std_logic_vector(7 downto 0);
+        rd_en : out std_logic := '0';
+        wr_en : out std_logic := '0'
+        --mcycle_debug : out unsigned(1 downto 0) := (others => '0')
+    );
+end component;
+
+signal CE_GB : std_logic := '0';
+signal addr_bus : std_logic_vector(15 downto 0) := (others => '0');
+signal data_bus_in : std_logic_vector(7 downto 0) := (others => '0');
+signal data_bus_out : std_logic_vector(7 downto 0) := (others => '0');
+signal rd_en : std_logic := '0';
+signal wr_en : std_logic := '0';
+
+signal ce_cnt : unsigned(3 downto 0) := (others => '0');
+-------------------------------------------
+-- 
+-------------------------------------------
 
 begin
+
+my_clock : clk_wiz_0
+    port map ( 
+        clk_out1 => CLK_SYS,           
+        locked => locked,
+        clk_in1 => clock125
+    );
+ 
+ my_cpu : cpu
+    port map (
+        CLK_SYS => CLK_SYS,
+        CE_GB => CE_GB,
+        RST => RST_SYS,
+        addr_bus => addr_bus,
+        data_bus_in => data_bus_in,
+        data_bus_out => data_bus_out,
+        rd_en => rd_en,
+        wr_en => wr_en
+    );
+ 
+ clock_enable_gb : process
+ begin
+    if rising_edge(CLK_SYS) then
+        if ce_cnt = 16 then
+            ce_cnt <= (others => '0');
+            CE_GB <= '1';
+        else
+            ce_cnt <= ce_cnt + 1;
+            CE_GB <= '0';
+        end if;
+    end if;
+ end process;
 
 end Behavioral;
