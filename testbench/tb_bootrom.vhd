@@ -60,7 +60,7 @@ end function;
 signal bootrom : rom_type;
 
 signal clk : std_logic := '0';
-signal clk_period : time := 1ms;
+signal clk_period : time := 1 ms;
 signal read_en : std_logic := '0';
 signal read_rom_byte : std_logic_vector(rom_width-1 downto 0) := (others => '0');
 signal read_addr : unsigned(rom_width-1 downto 0) := (others => '0');

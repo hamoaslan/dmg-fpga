@@ -74,11 +74,14 @@ signal rd_en : std_logic := '0';
 signal wr_en : std_logic := '0';
 
 signal ce_cnt : unsigned(3 downto 0) := (others => '0');
+
+signal rst_raw : std_logic := '0';
 -------------------------------------------
 -- 
 -------------------------------------------
 
 begin
+rst_raw <= reset_async or not locked;
 
 my_clock : clk_wiz_0
     port map ( 
@@ -99,10 +102,10 @@ my_clock : clk_wiz_0
         wr_en => wr_en
     );
  
- clock_enable_gb : process
+ clock_enable_gb : process(CLK_SYS)
  begin
     if rising_edge(CLK_SYS) then
-        if ce_cnt = 16 then
+        if ce_cnt = 15 then
             ce_cnt <= (others => '0');
             CE_GB <= '1';
         else
@@ -111,5 +114,13 @@ my_clock : clk_wiz_0
         end if;
     end if;
  end process;
+ 
+ sync_reset : entity work.meta_sync(RTL)
+    port map(
+        clock => CLK_SYS,
+        async => rst_raw,
+        sync => RST_SYS, 
+        reset => '0'
+    );
 
 end Behavioral;
