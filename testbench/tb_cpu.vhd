@@ -37,8 +37,8 @@ component cpu is
         addr_bus : out std_logic_vector(15 downto 0);
         data_bus_in : in std_logic_vector(7 downto 0);
         data_bus_out : out std_logic_vector(7 downto 0);
-        rd_en : out std_logic;
-        wr_en : out std_logic;
+        RD_EN : out std_logic;
+        WR_EN : out std_logic;
         mcycle_debug : out unsigned(1 downto 0) := (others => '0')
         );
 end component;
@@ -49,8 +49,8 @@ signal rst : std_logic := '0';
 signal addr_bus : std_logic_vector(15 downto 0) := (others => '0');
 signal data_bus_in : std_logic_vector(7 downto 0) := (others => '0');
 signal data_bus_out : std_logic_vector(7 downto 0) := (others => '0');
-signal rd_en : std_logic := '0';
-signal wr_en : std_logic := '0';
+signal RD_EN : std_logic := '0';
+signal WR_EN : std_logic := '0';
 signal mcycle_debug : unsigned(1 downto 0) := (others => '0');
 
 constant CLK_PERIOD: time := 8 ns;
@@ -89,8 +89,8 @@ begin
         addr_bus => addr_bus,
         data_bus_in => data_bus_in,
         data_bus_out => data_bus_out,
-        rd_en => rd_en,
-        wr_en => wr_en,
+        RD_EN => RD_EN,
+        WR_EN => WR_EN,
         mcycle_debug => mcycle_debug
     );
     

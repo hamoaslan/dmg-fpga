@@ -26,7 +26,7 @@ use IEEE.NUMERIC_STD.ALL;
 package gb_pkg is
     type alu_op_type is (
         ALU_ADD, ALU_ADC, 
-        ALU_SUP, ALU_SBC,
+        ALU_SUB, ALU_SBC,
         ALU_AND, ALU_OR, ALU_XOR, ALU_CP,
         ALU_NOP
     );

@@ -31,8 +31,8 @@ entity cpu is
         addr_bus : out std_logic_vector(15 downto 0);
         data_bus_in : in std_logic_vector(7 downto 0);
         data_bus_out : out std_logic_vector(7 downto 0);
-        rd_en : out std_logic := '0';
-        wr_en : out std_logic := '0'
+        RD_EN : out std_logic := '0';
+        WR_EN : out std_logic := '0'
         );
 end cpu;
 
@@ -96,6 +96,13 @@ end component;
 signal PATTERN : PATTERN_TYPE;
 signal cb_prefix : std_logic := '0';
 
+-- IR(xxyy yzzz) / IR(00pp q000)
+alias op_x : std_logic_vector(1 downto 0) is reg_IR(7 downto 6);
+alias op_y : std_logic_vector(2 downto 0) is reg_IR(5 downto 3);
+alias op_z : std_logic_vector(2 downto 0) is reg_IR(2 downto 0);
+alias op_p : std_logic_vector(1 downto 0) is reg_IR(5 downto 4);
+alias op_q : std_logic is reg_IR(3);
+
 -------------------------------------------
 -- STATE MACHINE (FSM)
 -------------------------------------------
@@ -113,10 +120,15 @@ type STATE_TYPE is (
 );
 signal STATE : STATE_TYPE := IDLE;
 
+-------------------------------------------
+-- 
+-------------------------------------------
+signal do_fetch : std_logic := '0';
+
 begin
 
 my_alu : alu
-    port map (
+    port map(
         data_in1 => alu_data_in1,
         data_in2 => alu_data_in2,
         op => alu_op,
@@ -133,11 +145,32 @@ my_cpu_decode : cpu_decode
         PATTERN => PATTERN
     );
 
+fetch_proc : process (STATE, PATTERN)
+begin
+    do_fetch <= '0';
+    case STATE is
+        when FETCH => do_fetch <= '1';
+        when EXEC1 => 
+            case PATTERN is
+                when P_NOP | P_LD_R_R => do_fetch <= '1';
+                when others => null;
+            end case;
+        when EXEC2 =>
+            case PATTERN is
+                when P_LD_R_N => do_fetch <= '1';
+                when others => null;
+            end case;
+        --when EXEC3 =>
+        --when EXEC4 =>
+        --when EXEC5 =>
+        --when EXEC6 =>
+        when others => null;
+    end case;
+end process fetch_proc;
+
 process (CLK_SYS)
-variable do_fetch : boolean := false;
 begin
     if rising_edge(CLK_SYS) then
-        
         if RST = '1' then
             reg_PC <= (others => '0');
             reg_SP <= (others => '0');
@@ -154,36 +187,32 @@ begin
             reg_IR <= (others => '0');
             reg_IE <= (others => '0');
             
-            rd_en <= '0';
-            wr_en <= '0';
+            RD_EN <= '0';
+            WR_EN <= '0';
             
             m_cycle_count <= (others => '0');
             
             STATE <= IDLE;    
         elsif CE_GB = '1' then
-            do_fetch := false;
-            rd_en <= '0';
-            wr_en <= '0';
+            RD_EN <= '0';
+            WR_EN <= '0';
             
             case STATE is 
                 when IDLE => 
                     if m_cycle_count = 3 then
                         STATE <= FETCH;
                     end if;    
-                when FETCH =>
-                    do_fetch := true;
+                when FETCH => null;
                 when EXEC1 =>
                     case PATTERN is
-                        when P_NOP => 
-                            do_fetch := true;
+                        when P_NOP => null;
                         when P_LD_R_R => 
-                            do_fetch := true;
                             if m_cycle_count = 3 then
                                 reg_B <= reg_A;
                             end if;
                         when P_LD_R_N => 
                             if m_cycle_count = 0 then    
-                                rd_en <= '1';
+                                RD_EN <= '1';
                                 addr_bus <= reg_PC;
                                 reg_PC <= std_logic_vector(unsigned(reg_PC) + 1);
                             elsif m_cycle_count = 3 then
@@ -195,7 +224,6 @@ begin
                 when EXEC2 =>
                     case PATTERN is
                         when P_LD_R_N => 
-                            do_fetch := true;
                             if m_cycle_count = 3 then
                                 reg_A <= reg_Z;
                             end if;
@@ -221,9 +249,9 @@ begin
                 when others => STATE <= IDLE;
             end case;
             
-            if do_fetch then
+            if do_fetch = '1' then
                 if m_cycle_count = 0 then
-                    rd_en <= '1';
+                    RD_EN <= '1';
                     addr_bus <= reg_PC;
                     reg_PC <= std_logic_vector(unsigned(reg_PC) + 1);
                 elsif m_cycle_count = 3 then
@@ -237,166 +265,5 @@ begin
         end if;
     end if;
 end process;
-
---process (CLK_SYS)
---begin
---    if rising_edge(CLK_SYS) then
---        if CE_GB = '1' then
---            if RST='1' then
---                reg_PC <= (others => '0');
---                reg_SP <= (others => '0');
-                
---                reg_A <= x"0A";
---                reg_F <= x"0F";
---                reg_B <= x"0B";
---                reg_C <= x"0C";
---                reg_D <= x"0D";
---                reg_E <= x"0E";
---                reg_H <= x"09";
---                reg_L <= x"08";
-                
---                reg_IR <= (others => '0');
---                reg_IE <= (others => '0');
-                
---                rd_en <= '0';
---                wr_en <= '0';
-                
---                mcycle_count <= (others => '0');
-                
---                STATE <= IDLE;
---            else       
---                rd_en <= '0';
---                wr_en <= '0';
-                    
---                case STATE is
---                    when IDLE => STATE <= FETCH;
---                    when FETCH => 
---                        rd_en <= '1';
---                        addr_bus <= reg_PC;
---                        reg_PC <= std_logic_vector(unsigned(reg_PC) + 1);
---                        STATE <= READBUS;                       
---                    when READBUS =>
---                        if mcycle_count = 0 then
---                            reg_IR <= data_bus_in;
---                            STATE <= DECODE;                        
---                        else 
---                            STATE <= WAIT_M_CYCLE;
---                        end if;                   
---                    when DECODE =>
---                        case reg_IR is
---                            when x"00" => 
---                                STATE <= EXECUTE;
---                            when x"40" | x"41" | x"42" | x"43" | x"44" | x"45" | x"47" =>
---                                case reg_IR is
---                                    when x"40" => reg_B <= reg_B;
---                                    when x"41" => reg_B <= reg_C;
---                                    when x"42" => reg_B <= reg_D;
---                                    when x"43" => reg_B <= reg_E;
---                                    when x"44" => reg_B <= reg_H;
---                                    when x"45" => reg_B <= reg_L;
---                                    when x"47" => reg_B <= reg_A;
---                                    when others => NULL;
---                                end case;
---                                STATE <= EXECUTE;
---                            when x"50" | x"51" | x"52" | x"53" | x"54" | x"55" | x"57" =>
---                                case reg_IR is
---                                    when x"50" => reg_D <= reg_B;
---                                    when x"51" => reg_D <= reg_C;
---                                    when x"52" => reg_D <= reg_D;
---                                    when x"53" => reg_D <= reg_E;
---                                    when x"54" => reg_D <= reg_H;
---                                    when x"55" => reg_D <= reg_L;
---                                    when x"57" => reg_D <= reg_A;
---                                    when others => NULL;
---                                end case;
---                                STATE <= EXECUTE;
---                            when x"60" | x"61" | x"62" | x"63" | x"64" | x"65" | x"67" =>
---                                case reg_IR is
---                                    when x"60" => reg_H <= reg_B;
---                                    when x"61" => reg_H <= reg_C;
---                                    when x"62" => reg_H <= reg_D;
---                                    when x"63" => reg_H <= reg_E;
---                                    when x"64" => reg_H <= reg_H;
---                                    when x"65" => reg_H <= reg_L;
---                                    when x"67" => reg_H <= reg_A;
---                                    when others => NULL;
---                                end case;
---                                STATE <= EXECUTE;
------------------------------------------------------------------------------------------                                
---                            when x"48" | x"49" | x"4A" | x"4B" | x"4C" | x"4D" | x"4F" =>
---                                case reg_IR is
---                                    when x"48" => reg_C <= reg_B;
---                                    when x"49" => reg_C <= reg_C;
---                                    when x"4A" => reg_C <= reg_D;
---                                    when x"4B" => reg_C <= reg_E;
---                                    when x"4C" => reg_C <= reg_H;
---                                    when x"4D" => reg_C <= reg_L;
---                                    when x"4F" => reg_C <= reg_A;
---                                    when others => NULL;
---                                end case;
---                                STATE <= EXECUTE;
---                            when x"58" | x"59" | x"5A" | x"5B" | x"5C" | x"5D" | x"5F" =>
---                                case reg_IR is
---                                    when x"58" => reg_E <= reg_B;
---                                    when x"59" => reg_E <= reg_C;
---                                    when x"5A" => reg_E <= reg_D;
---                                    when x"5B" => reg_E <= reg_E;
---                                    when x"5C" => reg_E <= reg_H;
---                                    when x"5D" => reg_E <= reg_L;
---                                    when x"5F" => reg_E <= reg_A;
---                                    when others => NULL;
---                                end case;
---                                STATE <= EXECUTE;                             
---                            when x"68" | x"69" | x"6A" | x"6B" | x"6C" | x"6D" | x"6F" =>
---                                case reg_IR is
---                                    when x"68" => reg_L <= reg_B;
---                                    when x"69" => reg_L <= reg_C;
---                                    when x"6A" => reg_L <= reg_D;
---                                    when x"6B" => reg_L <= reg_E;
---                                    when x"6C" => reg_L <= reg_H;
---                                    when x"6D" => reg_L <= reg_L;
---                                    when x"6F" => reg_L <= reg_A;
---                                    when others => NULL;
---                                end case;
---                                STATE <= EXECUTE;
---                            when x"78" | x"79" | x"7A" | x"7B" | x"7C" | x"7D" | x"7F" =>
---                                case reg_IR is
---                                    when x"78" => reg_A <= reg_B;
---                                    when x"79" => reg_A <= reg_C;
---                                    when x"7A" => reg_A <= reg_D;
---                                    when x"7B" => reg_A <= reg_E;
---                                    when x"7C" => reg_A <= reg_H;
---                                    when x"7D" => reg_A <= reg_L;
---                                    when x"7F" => reg_A <= reg_A;
---                                    when others => NULL;
---                                end case;
---                                STATE <= EXECUTE;
---                            when others => STATE <= IDLE;                        
---                        end case;
---                    when EXECUTE => 
---                        case TASK is
---                            when LOAD => target <= source; 
---                            when others => NULL;
---                        end case;
---                        rd_en <= '1';
---                        addr_bus <= reg_PC;
---                        reg_PC <= std_logic_vector(unsigned(reg_PC) + 1);
---                        STATE <= WAIT_M_CYCLE;
---                    when WAIT_M_CYCLE =>
---                        if mcycle_count = 3 then
---                            STATE <= READBUS;
---                        end if;
---                    when others => STATE <= IDLE;
---                end case;
-                
---                if mcycle_count < 3 then
---                    mcycle_count <= mcycle_count + 1;
---                else
---                    mcycle_count <= (others => '0');
---                end if;
---            end if;
---        end if;    
---    end if;
---end process;
 
 end Behavioral;

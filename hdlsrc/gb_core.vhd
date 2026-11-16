@@ -60,8 +60,8 @@ component cpu
         addr_bus : out std_logic_vector(15 downto 0);
         data_bus_in : in std_logic_vector(7 downto 0);
         data_bus_out : out std_logic_vector(7 downto 0);
-        rd_en : out std_logic := '0';
-        wr_en : out std_logic := '0'
+        RD_EN : out std_logic := '0';
+        WR_EN : out std_logic := '0'
         --mcycle_debug : out unsigned(1 downto 0) := (others => '0')
     );
 end component;
@@ -70,8 +70,8 @@ signal CE_GB : std_logic := '0';
 signal addr_bus : std_logic_vector(15 downto 0) := (others => '0');
 signal data_bus_in : std_logic_vector(7 downto 0) := (others => '0');
 signal data_bus_out : std_logic_vector(7 downto 0) := (others => '0');
-signal rd_en : std_logic := '0';
-signal wr_en : std_logic := '0';
+signal RD_EN : std_logic := '0';
+signal WR_EN : std_logic := '0';
 
 signal ce_cnt : unsigned(3 downto 0) := (others => '0');
 
@@ -98,8 +98,8 @@ my_clock : clk_wiz_0
         addr_bus => addr_bus,
         data_bus_in => data_bus_in,
         data_bus_out => data_bus_out,
-        rd_en => rd_en,
-        wr_en => wr_en
+        RD_EN => RD_EN,
+        WR_EN => WR_EN
     );
  
  clock_enable_gb : process(CLK_SYS)
